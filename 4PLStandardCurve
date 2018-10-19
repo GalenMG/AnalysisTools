@@ -1,0 +1,68 @@
+# -*- coding: utf-8 -*-
+"""
+GoldyBio
+March 13, 2018
+Given a set of (two dimensional) standard curve data, this will return the four-
+parameter logistic regression coefficients. It'll also plot the predicted curve alongside 
+the measured values of the standards. 
+"""
+
+"""
+Inputs:
+"""
+# insert data as a comma separated list 
+y = [-0.000425,
+0.112925,
+0.315325,
+0.653775,
+1.270525,
+1.900425,
+2.362375
+]
+x = [0,
+50,
+125,
+250,
+500,
+750,
+1000
+]
+# Leave filename set to 'td' unless you would like to name your file 
+# the default filename will be the time and date 
+filename = 'td'
+# graph resolution/dpi: 100 is a good number for a powerpoint 
+# I would recommend using 250 unless you need a large image 
+# Filesize will grow exponentially as you increase dpi
+res = 250
+"""
+Dependencies:
+"""
+import FPL
+import matplotlib.pyplot as plot
+import datetime as dt
+
+# Evaluate
+(plsq, Rsq) = FPL.fpl(y, x)
+
+# Set filename
+if filename == 'td':
+    now = dt.datetime.now()
+    file = 'FPLReg_'+now.strftime('%Y-%m-%d_%H;%M;%S')
+else:
+    file = filename
+ABCD = ['A','B','C','D']
+for i in range(len(plsq)):
+    print('%s = %.6f' % (ABCD[i], plsq[i]))
+
+# establish graph scale
+ymax, ymin, dy = max(y), min(y), max(y)-min(y)
+xmax, xmin, dx = max(x), min(x), max(x)-min(x)
+        
+# Plot and save the data
+plot.plot(x,FPL.peval(x,plsq),x,y,'o')
+plot.title(file + ' Standard Curve')
+plot.legend(['Fit','Data'],loc='upper left')
+plot.text(xmin+(0.7*dx), ymin, 'R^2 = %.6f' % Rsq)
+for i, (param, est) in enumerate(zip('ABCD', plsq)):
+    plot.text(xmin+(0.7*dx), (ymin+0.24*dy)-(0.06*dy*i), '%s = %.5f' % (param, est))
+plot.savefig(file + '.png', dpi=res)
