@@ -1,0 +1,53 @@
+# -*- coding: utf-8 -*-
+"""
+Four Parameter logistic regression module
+Useful in the analysis of assays with non-linear standard curves
+  (see ELISA, multiplex, alkaline phosphatase, etc.)
+GoldyBio
+"""
+
+"""
+Coefficient meanings:
+    A = Minimum asymptote (response value of blank)
+    B = Hill's slope
+    C = Inflection point (point where second derivative changes sign)
+    D = Maximum asymptote (response at infinite std conc)
+"""
+
+import numpy as np
+from scipy.optimize import leastsq as lsq
+
+def logistic4(x, A, B, C, D):
+    """ 4PL logistic equation """
+    return ((A-D)/(1+((x/C)**B))) + D
+
+def residuals(p, y, x):
+    """ calculate residuals """
+    A,B,C,D = p
+    err = y-logistic4(x, A, B, C, D)
+    return err
+
+def peval(x, p):
+    """ evaluated value at x with current parameters """
+    A,B,C,D = p
+    return logistic4(x,A,B,C,D)
+
+def preturn(y, p):
+    """ estimate x using given parameters, measured y """
+    A,B,C,D = p
+    return C*((A-D)/(y-D)-1)**(1/B)
+
+def fpl(y, x):
+    """ find best fit equation parameters & R**2 """
+    # initial guess on parameters ABCD
+    p0 = [0,1,1,1]
+    # fit equation using least squares, simplify data format
+    plsq = lsq(residuals,p0,args=(y,x))
+    plsq = plsq[0]
+    # calculate R**2
+    yhat = peval(x,plsq)
+    ybar = np.sum(y)/len(y)
+    ssres = np.sum((yhat-y)**2)
+    sstot = np.sum((yhat-ybar)**2)
+    Rsq = 1 - ssres/sstot
+    return plsq, Rsq
